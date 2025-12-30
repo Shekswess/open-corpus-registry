@@ -127,6 +127,3 @@ node_modules/
 
 # CDK Out
 cdk.out/
-
-# Data folder
-data/
