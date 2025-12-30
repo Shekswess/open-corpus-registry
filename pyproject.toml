@@ -4,6 +4,15 @@ version = "1.0.0"
 description = "Open Corpus Registry (OCR): pipeline + catalog for pretraining, midtraining, and post-training datasets."
 readme = "README.md"
 requires-python = ">=3.14"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "boto3==1.42.18",
     "huggingface-hub==1.2.3",
@@ -13,7 +22,10 @@ dependencies = [
 authors = [
     { name = "Bojan Jakimovski - Shekswess", email = "jakimovski_bojan@outlook.com" },
 ]
+license = { file = "LICENCE" }
 
+[project.urls]
+Homepage = "https://shekswess.github.io/open-corpus-registry/"
 
 [tool.ruff]
 exclude = [

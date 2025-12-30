@@ -1,4 +1,6 @@
-# Open Corpus Registry (OCR)
+# Open Corpus Registry
+
+![header_logo_image](./templates/assets/icon.png)
 
 Open catalog of datasets used to train and align LLMs across pretraining, mid-training, and post-training.
 
@@ -34,7 +36,7 @@ uv sync
 Serve the repo root:
 
 ```bash
-python3 -m http.server 8000 --bind 127.0.0.1
+uv run python -m http.server 8000 --bind 127.0.0.1
 ```
 
 Then open `http://127.0.0.1:8000/templates/`.
@@ -46,7 +48,7 @@ OCR treats [`data/datasets_all.jsonl`](data/datasets_all.jsonl) as the ground-tr
 1. Add the Hugging Face dataset ID(s) to [`data/list_datasets.json`](data/list_datasets.json) (`{"datasets":[...]}`).
 2. Run the pipeline:
    ```bash
-   python3 src/update_datasets_pipeline.py
+   uv run src/update_datasets_pipeline.py
    ```
 3. The registry is written/updated at [`data/datasets_all.jsonl`](data/datasets_all.jsonl).
 
@@ -63,25 +65,41 @@ OCR treats [`data/datasets_all.jsonl`](data/datasets_all.jsonl) as the ground-tr
 Examples:
 
 ```bash
-python3 src/update_datasets_pipeline.py --skip-llm --metadata new
-python3 src/update_datasets_pipeline.py --metadata all
-python3 src/update_datasets_pipeline.py --prune --dry-run
-python3 src/update_datasets_pipeline.py --output outputs/datasets_all.preview.jsonl
+uv run src/update_datasets_pipeline.py --skip-llm --metadata new
+uv run src/update_datasets_pipeline.py --metadata all
+uv run src/update_datasets_pipeline.py --prune --dry-run
+uv run src/update_datasets_pipeline.py --output outputs/datasets_all.preview.jsonl
 ```
 
 ## Repo structure
 
-```text
-open-corpus-registry/
+```plain
+.
+├── .github/
+│   ├── workflows/
+│   │   ├── pages.yaml              # deploy web UI to GitHub Pages
+│   │   └── uv-ci.yaml              # CI for pipeline
+│   └── dependabot.yaml             # dependency update config
 ├── data/
-│   ├── datasets_all.jsonl
-│   ├── list_datasets.json
+│   ├── datasets_all.jsonl          # ground-truth registry (generated/updated)
+│   ├── list_datasets.json          # input dataset ids (you edit this)
 │   └── readmes/                    # cached dataset cards (generated)
+├── outputs/                        # pipeline outputs/cache (generated)
 ├── src/
-│   ├── update_datasets_pipeline.py # pipeline entrypoint
-│   └── ...                         # helpers
+│   ├── prompts/
+│   │   └── system_prompt.txt       # system prompt used for LLM enrichment
+│   ├── expand_dataset_info.py      # fetch Hugging Face Hub metadata (utility)
+│   ├── extract_readme_data.py      # download/read README.md + stage classification
+│   ├── standardize_data.py         # LLM enrichment + schema normalization
+│   └── update_datasets_pipeline.py # pipeline entrypoint (end-to-end updater)
 ├── templates/
-│   ├── index.html                  # static UI (single-page app)
-│   └── assets/
-└── .github/
+│   ├── assets/
+│   └── index.html                  # static UI (single-page app)
+├── .pre-commit-config.yaml
+├── .python-version
+├── .gitignore
+├── LICENSE
+├── pyproject.toml
+├── README.md
+└── uv.lock
 ```
