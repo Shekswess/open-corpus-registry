@@ -1,8 +1,16 @@
-# Open Corpus Registry
+<p align="center">
+  <img
+    src="templates/assets/icon.png"
+    alt="Open Corpus Registry logo"
+    width="140"
+  />
+</p>
 
-![header_logo_image](./templates/assets/icon.png)
+<h1 align="center">Open Corpus Registry</h1>
 
-Open catalog of datasets used to train and align LLMs across pretraining, mid-training, and post-training.
+<p align="center">
+  Open catalog of datasets used to train and align LLMs across pretraining, mid-training, and post-training.
+</p>
 
 ## Why Open Corpus Registry
 
