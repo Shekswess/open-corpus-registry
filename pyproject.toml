@@ -76,4 +76,4 @@ invalid-assignment = "warn"
 
 
 [dependency-groups]
-dev = ["pre-commit==4.3.0", "ruff==0.14.1", "ty==0.0.1a8", "ipykernel==7.0.1"]
+dev = ["pre-commit==4.3.0", "ruff==0.14.1", "ty==0.0.1a8", "ipykernel==7.1.0"]
