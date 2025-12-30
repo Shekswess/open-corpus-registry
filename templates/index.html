@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Open Corpus Registry (OCR)</title>
+    <link rel="icon" type="image/png" href="./assets/icon.png" />
+    <style>
+      :root {
+        --bg: #ffffff;
+        --fg: #000000;
+        --surface: #fcfcfc;
+        --border: #eeeeee;
+        --border-bold: #000000;
+        --muted: #666666;
+        --highlight: #f5f5f5;
+        --sans: "Inter", -apple-system, system-ui, sans-serif;
+        --mono: "JetBrains Mono", "IBM Plex Mono", monospace;
+      }
+
+      [data-theme="dark"] {
+        --bg: #000000;
+        --fg: #ffffff;
+        --surface: #0a0a0a;
+        --border: #222222;
+        --border-bold: #ffffff;
+        --muted: #888888;
+        --highlight: #111111;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: var(--sans);
+        background: var(--bg);
+        color: var(--fg);
+        font-size: 13px;
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      nav {
+        height: 70px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        border-bottom: 1px solid var(--border);
+        z-index: 10;
+        flex-shrink: 0;
+      }
+      /* Modernized Logo Typography */
+      .logo { 
+        font-weight: 600; 
+        font-size: 18px; 
+        letter-spacing: -0.01em; 
+        display: inline-flex; 
+        align-items: center; 
+        gap: 12px; 
+        color: var(--fg);
+      }
+      .logo img { width: 40px; height: 40px; object-fit: contain; border-radius: 8px; }
+      .nav-actions { display: flex; gap: 12px; align-items: center; }
+
+      main { display: flex; flex: 1; overflow: hidden; }
+      .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+      
+      .toolbar {
+        padding: 12px 24px;
+        display: flex;
+        gap: 16px;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+        align-items: center;
+      }
+      
+      .search-input {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--fg);
+        padding: 8px 12px;
+        border-radius: 4px;
+        width: 280px;
+        font-family: var(--sans);
+        outline: none;
+      }
+      .search-input:focus { border-color: var(--border-bold); }
+
+      .table-wrapper { flex: 1; overflow: auto; background: var(--bg); }
+      table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 1000px; }
+      thead { position: sticky; top: 0; background: var(--bg); z-index: 5; }
+      
+      th {
+        text-align: left;
+        padding: 0;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        border-bottom: 1px solid var(--border);
+        font-weight: 600;
+        background: var(--bg);
+      }
+      
+      .th-label { padding: 14px 24px; display: block; }
+
+      th button {
+        all: unset;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 24px;
+        width: 100%;
+        cursor: pointer;
+        transition: background 0.1s;
+      }
+      th button:hover { color: var(--fg); background: var(--highlight); }
+      
+      td {
+        padding: 14px 24px;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      tr:hover td { background: var(--highlight); cursor: pointer; }
+      .mono { font-family: var(--mono); font-size: 12px; }
+
+      .pagination-bar {
+        height: 48px;
+        padding: 0 24px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg);
+        flex-shrink: 0;
+      }
+      .page-info { font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; }
+
+      /* Inspector Panel */
+      .inspector {
+        width: 0;
+        border-left: 0 solid var(--border);
+        background: var(--bg);
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .inspector.open { width: 520px; border-left-width: 1px; }
+      .inspector-header { 
+        padding: 24px; 
+        border-bottom: 1px solid var(--border); 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: flex-start;
+      }
+      .inspector-body { padding: 0; flex: 1; overflow-y: auto; background: var(--surface); }
+
+      .ins-section { padding: 24px; border-bottom: 1px solid var(--border); background: var(--bg); }
+      .ins-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+      
+      .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+      .stat-box { background: var(--bg); padding: 20px 16px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+      .stat-val { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--fg); }
+      .stat-lab { font-size: 9px; text-transform: uppercase; color: var(--muted); font-weight: 800; letter-spacing: 0.1em; }
+
+      .data-label { font-size: 10px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; font-weight: 800; letter-spacing: 0.05em; }
+      .data-value { font-size: 14px; line-height: 1.6; color: var(--fg); }
+      .data-value.desc { text-align: justify; white-space: pre-wrap; color: var(--fg); font-size: 14px; }
+      
+      .citation-box { 
+        background: var(--highlight); 
+        padding: 14px; 
+        border-radius: 4px; 
+        font-family: var(--mono); 
+        font-size: 11px; 
+        color: var(--fg); 
+        white-space: pre-wrap; 
+        border: 1px solid var(--border);
+        line-height: 1.5;
+        overflow-x: auto;
+      }
+
+      .field { margin-bottom: 20px; padding: 0 24px; }
+      .field label { display: block; font-size: 11px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; font-weight: 700; }
+      .field input, .field textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--fg); padding: 10px; border-radius: 4px; font-family: var(--mono); font-size: 13px; outline: none; }
+      .field textarea { height: 100px; resize: vertical; font-family: var(--sans); }
+
+      .btn {
+        background: var(--bg); border: 1px solid var(--border);
+        color: var(--fg); padding: 8px 14px; border-radius: 4px;
+        font-weight: 600; cursor: pointer; font-size: 12px;
+        display: inline-flex; align-items: center; gap: 8px;
+      }
+      .btn:hover:not(:disabled) { border-color: var(--border-bold); background: var(--highlight); }
+      .btn-black { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+      .theme-toggle { padding: 6px; width: 36px; height: 32px; justify-content: center; }
+      .theme-toggle svg { width: 16px; height: 16px; display: none; }
+      [data-theme="light"] .theme-toggle .icon-moon { display: block; }
+      [data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+      
+      .status-pill {
+        display: inline-block; padding: 2px 8px; border-radius: 4px;
+        font-size: 10px; font-weight: 700; background: var(--highlight);
+        border: 1px solid var(--border); text-transform: uppercase;
+        color: var(--fg);
+      }
+
+      footer {
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-top: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--muted);
+        font-size: 11px;
+        letter-spacing: 0.02em;
+        flex-shrink: 0;
+        z-index: 10;
+      }
+      /* Author Link Styling */
+      .footer-author { 
+        color: var(--fg); 
+        font-weight: 600; 
+        text-decoration: none; 
+        transition: opacity 0.2s;
+      }
+      .footer-author:hover { opacity: 0.6; text-decoration: underline; }
+
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+      @media (max-width: 1100px) {
+        .inspector.open { width: 100%; position: absolute; right: 0; top: 70px; bottom: 0; z-index: 20; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <nav>
+      <div class="logo">
+        <img src="./assets/icon.png" alt="OCR Icon" />
+        <span>Open Corpus Registry (OCR)</span>
+      </div>
+      <div class="nav-actions">
+        <span id="save-indicator" style="font-size: 11px; font-family: var(--mono); color: var(--muted); margin-right: 10px;"></span>
+        <button class="btn btn-danger" id="reset-btn" style="display:none" onclick="clearCache()">Discard Cache</button>
+        <button class="btn theme-toggle" onclick="toggleTheme()" id="theme-toggle" aria-label="Toggle dark mode">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line><line x1="4.2" y1="4.2" x2="6.4" y2="6.4"></line><line x1="17.6" y1="17.6" x2="19.8" y2="19.8"></line><line x1="17.6" y1="6.4" x2="19.8" y2="4.2"></line><line x1="4.2" y1="19.8" x2="6.4" y2="17.6"></line></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+        </button>
+        <div id="editor-actions" style="display:none; gap: 8px;">
+            <button class="btn" onclick="openInspector(null)">+ Add Dataset</button>
+            <button class="btn btn-black" onclick="saveData()">Save to File</button>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <div class="content">
+        <div class="toolbar">
+          <input type="text" class="search-input" id="search" placeholder="Search ID, Author, Stage...">
+          <select class="btn" id="filter-stage"><option value="">Stage: All</option></select>
+          <select class="btn" id="filter-nature"><option value="">Nature: All</option></select>
+        </div>
+        
+        <div class="table-wrapper">
+          <table id="data-table">
+            <thead>
+              <tr>
+                <th style="width: 25%;"><button onclick="handleSort('dataset_id')">ID <span id="sort-dataset_id"></span></button></th>
+                <th style="width: 12%;"><span class="th-label">Stage</span></th>
+                <th style="width: 12%;"><span class="th-label">Nature</span></th>
+                <th style="width: 10%;"><button onclick="handleSort('tokens')">Tokens <span id="sort-tokens"></span></button></th>
+                <th style="width: 10%;"><button onclick="handleSort('downloads')">Downloads <span id="sort-downloads"></span></button></th>
+                <th style="width: 8%;"><button onclick="handleSort('likes')">Likes <span id="sort-likes"></span></button></th>
+                <th><span class="th-label">Author</span></th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination-bar">
+          <div class="page-info" id="page-info">Showing 0 of 0</div>
+          <div class="page-controls">
+            <button class="btn" id="prev-page" onclick="changePage(-1)">Previous</button>
+            <button class="btn" id="next-page" onclick="changePage(1)">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="inspector" id="inspector">
+        <div class="inspector-header">
+          <div>
+            <h2 id="ins-title" style="font-size: 16px; margin-bottom: 4px;">Dataset</h2>
+            <p id="ins-subtitle" class="mono" style="color: var(--muted); font-size: 10px;"></p>
+          </div>
+          <button class="btn" onclick="closeInspector()">Close</button>
+        </div>
+        <div class="inspector-body" id="ins-content"></div>
+        <div class="inspector-header" id="ins-footer" style="border-top: 1px solid var(--border); border-bottom: none; justify-content: flex-start; gap: 10px;">
+          <button class="btn btn-black" id="ins-action-link" style="width: 100%; justify-content: center; height: 44px; font-size: 13px;">Open Source on Hugging Face ↗</button>
+          <button class="btn btn-danger" id="ins-action-del" style="display: none;">Delete Entry</button>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      <div>Created by <a href="https://shekswess.github.io/" target="_blank" class="footer-author">Shekswess</a> • <span id="footer-date"></span></div>
+    </footer>
+
+    <script>
+      const CONFIG = {
+        mode: "readonly", 
+        dataUrl: "../data/datasets_all.jsonl",
+        title: "Open Corpus Registry (OCR)",
+        pageSize: 15,
+        storageKey: "ocr_catalog_cache"
+      };
+
+      const KEYS = [
+        "dataset_id", "dataset_url", "stage", "nature", "content_types", 
+        "tokens", "downloads", "likes", "license", "languages", 
+        "task_categories", "created_at", "last_modified", "citation", 
+        "description", "author"
+      ];
+      
+      let allData = [];
+      let filteredData = [];
+      let currentPage = 1;
+      let activeRow = null;
+      let sortKey = 'downloads';
+      let sortDir = 'desc';
+
+      function displayStage(stage) {
+        if (!stage) return stage;
+        return stage === 'midtraining' ? 'mid-training' : stage;
+      }
+
+      function nFormat(num) {
+        if (!num && num !== 0) return '—';
+        const n = typeof num === 'string' ? parseFloat(num.replace(/,/g, '')) : num;
+        if (isNaN(n) || n === 0) return '—';
+        if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
+        if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+        if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+        if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+        return n.toString();
+      }
+
+      function formatDate(val) {
+        if (!val) return '—';
+        const date = new Date(val);
+        return isNaN(date.getTime()) ? val : date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      }
+
+      function formatList(val, pill = false) {
+        if (!val) return '—';
+        let arr = Array.isArray(val) ? val : (typeof val === 'string' ? val.split(',').map(s => s.trim()).filter(Boolean) : [String(val)]);
+        return pill ? arr.map(item => `<span class="status-pill">${item}</span>`).join('') : arr.join(', ');
+      }
+
+      function parseNumericValue(val) {
+        if (!val) return 0;
+        if (typeof val === 'number') return val;
+        const clean = String(val).toUpperCase().replace(/,/g, '');
+        const match = clean.match(/^([\d.]+)\s*([KMBT]?)$/);
+        if (!match) return parseFloat(clean) || 0;
+        const mult = { 'K': 1e3, 'M': 1e6, 'B': 1e9, 'T': 1e12 }[match[2]] || 1;
+        return parseFloat(match[1]) * mult;
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // Dynamic Footer Logic
+        const now = new Date();
+        const month = now.toLocaleString('default', { month: 'long' });
+        const year = now.getFullYear();
+        document.getElementById('footer-date').textContent = `${month} ${year}`;
+
+        if(CONFIG.mode === 'editable') {
+            document.getElementById('editor-actions').style.display = 'flex';
+            document.getElementById('reset-btn').style.display = 'inline-flex';
+        }
+        setTheme(localStorage.getItem('theme') || 'light');
+        loadInitialData();
+        setupEventListeners();
+      });
+
+      async function loadInitialData() {
+        const cached = localStorage.getItem(CONFIG.storageKey);
+        if (cached && CONFIG.mode === "editable") {
+            allData = JSON.parse(cached);
+            document.getElementById('save-indicator').textContent = "● UNSAVED";
+            finishLoading();
+        } else {
+            try {
+                const response = await fetch(CONFIG.dataUrl);
+                const text = await response.text();
+                allData = text.split('\n').filter(l => l.trim()).map(l => JSON.parse(l));
+                finishLoading();
+            } catch (e) { console.error(e); }
+        }
+      }
+
+      function finishLoading() { populateFilters(); applyFilters(); }
+
+      function applyFilters() {
+        const query = document.getElementById('search').value.toLowerCase();
+        const fStage = document.getElementById('filter-stage').value;
+        const fNature = document.getElementById('filter-nature').value;
+        filteredData = allData.filter(row => {
+          const matchSearch = Object.values(row)
+            .concat([displayStage(row.stage)])
+            .some(v => String(v).toLowerCase().includes(query));
+          const matchStage = !fStage || row.stage === fStage;
+          const matchNature = !fNature || row.nature === fNature;
+          return matchSearch && matchStage && matchNature;
+        });
+
+        filteredData.sort((a, b) => {
+          let valA = a[sortKey], valB = b[sortKey];
+          if (['tokens', 'downloads', 'likes'].includes(sortKey)) {
+            valA = parseNumericValue(valA); valB = parseNumericValue(valB);
+          } else {
+            valA = String(valA || '').toLowerCase(); valB = String(valB || '').toLowerCase();
+          }
+          if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+          if (valA > valB) return sortDir === 'asc' ? 1 : -1;
+          return 0;
+        });
+
+        updateSortIndicators();
+        currentPage = 1; 
+        renderTable();
+      }
+
+      function renderTable() {
+        const start = (currentPage - 1) * CONFIG.pageSize;
+        const pageData = filteredData.slice(start, start + CONFIG.pageSize);
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = pageData.map((row) => `
+          <tr onclick="openInspectorByID('${row.dataset_id}')">
+            <td class="mono" style="font-weight:600">${row.dataset_id}</td>
+            <td><span class="status-pill">${displayStage(row.stage)}</span></td>
+            <td><span class="status-pill">${row.nature}</span></td>
+            <td class="mono">${nFormat(row.tokens)}</td>
+            <td class="mono" style="color: var(--muted)">↓ ${nFormat(row.downloads)}</td>
+            <td class="mono" style="color: var(--muted)">♥ ${nFormat(row.likes)}</td>
+            <td>${row.author}</td>
+          </tr>
+        `).join('');
+        const total = filteredData.length;
+        document.getElementById('page-info').textContent = `Showing ${start + 1}-${Math.min(start + CONFIG.pageSize, total)} of ${total}`;
+        document.getElementById('prev-page').disabled = currentPage === 1;
+        document.getElementById('next-page').disabled = start + CONFIG.pageSize >= total;
+      }
+
+      function openInspectorByID(id) {
+          const index = allData.findIndex(r => r.dataset_id === id);
+          openInspector(index);
+      }
+
+      function openInspector(index) {
+        const isNew = index === null;
+        activeRow = isNew ? {} : allData[index];
+        const isReadonly = CONFIG.mode === 'readonly';
+        const container = document.getElementById('ins-content');
+        document.getElementById('ins-title').textContent = isNew ? "New Entry" : "Dataset Info Sheet";
+        document.getElementById('ins-subtitle').textContent = activeRow.dataset_id || "Draft";
+        document.getElementById('ins-action-del').style.display = (!isReadonly && !isNew) ? 'inline-flex' : 'none';
+        const linkBtn = document.getElementById('ins-action-link');
+        linkBtn.style.display = activeRow.dataset_url ? 'inline-flex' : 'none';
+        if (activeRow.dataset_url) linkBtn.onclick = () => window.open(activeRow.dataset_url, '_blank');
+
+        if (isReadonly) {
+            container.innerHTML = `
+                <div class="ins-section">
+                    <div class="data-label">Technical Description</div>
+                    <div class="data-value desc">${activeRow.description || 'No documentation provided.'}</div>
+                </div>
+                <div class="stat-row">
+                    <div class="stat-box"><div class="stat-lab">Downloads</div><div class="stat-val">${nFormat(activeRow.downloads)}</div></div>
+                    <div class="stat-box"><div class="stat-lab">Likes</div><div class="stat-val">${nFormat(activeRow.likes)}</div></div>
+                    <div class="stat-box"><div class="stat-lab">Tokens</div><div class="stat-val">${nFormat(activeRow.tokens)}</div></div>
+                </div>
+                <div class="ins-section ins-grid">
+                    <div><div class="data-label">Nature</div><div class="data-value"><span class="status-pill">${activeRow.nature || '—'}</span></div></div>
+                    <div><div class="data-label">Stage</div><div class="data-value"><span class="status-pill">${displayStage(activeRow.stage) || '—'}</span></div></div>
+                    <div><div class="data-label">Author</div><div class="data-value">${activeRow.author || '—'}</div></div>
+                    <div><div class="data-label">License</div><div class="data-value mono" style="font-size:11px">${activeRow.license || '—'}</div></div>
+                </div>
+                <div class="ins-section">
+                    <div class="data-label">Task Categorization</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+                        ${formatList(activeRow.task_categories, true)}
+                    </div>
+                    <div class="data-label" style="margin-top:20px;">Primary Languages</div>
+                    <div class="data-value" style="font-size:12px;">${formatList(activeRow.languages)}</div>
+                </div>
+                <div class="ins-section">
+                    <div class="data-label">BibTeX Citation</div>
+                    <div class="citation-box">${activeRow.citation || 'Citation not available.'}</div>
+                </div>
+                <div class="ins-section ins-grid" style="background:var(--surface); border-bottom:none">
+                    <div><div class="data-label">Discovery Date</div><div class="data-value mono" style="font-size:11px">${formatDate(activeRow.created_at)}</div></div>
+                    <div><div class="data-label">Last Sync</div><div class="data-value mono" style="font-size:11px">${formatDate(activeRow.last_modified)}</div></div>
+                </div>
+            `;
+        } else {
+            container.innerHTML = KEYS.map(key => `
+                <div class="field">
+                    <label>${key.replace('_', ' ')}</label>
+                    ${key === 'description' || key === 'citation' ? 
+                        `<textarea oninput="updateVal('${key}', this.value)">${activeRow[key] || ''}</textarea>` : 
+                        `<input type="text" value="${activeRow[key] || ''}" oninput="updateVal('${key}', this.value)">`
+                    }
+                </div>
+            `).join('');
+        }
+        document.getElementById('inspector').classList.add('open');
+      }
+
+      function updateVal(k, v) {
+          if (!allData.includes(activeRow)) allData.unshift(activeRow);
+          activeRow[k] = v;
+          localStorage.setItem(CONFIG.storageKey, JSON.stringify(allData));
+          document.getElementById('save-indicator').textContent = "● UNSAVED";
+          renderTable();
+      }
+
+      function closeInspector() { document.getElementById('inspector').classList.remove('open'); }
+      function handleSort(key) { if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc'; else { sortKey = key; sortDir = 'desc'; } applyFilters(); }
+      function updateSortIndicators() { ['dataset_id', 'tokens', 'downloads', 'likes'].forEach(k => { const el = document.getElementById(`sort-${k}`); if(el) el.textContent = sortKey === k ? (sortDir === 'asc' ? '↑' : '↓') : '·'; }); }
+      function changePage(delta) { currentPage += delta; renderTable(); }
+      function setupEventListeners() { document.getElementById('search').addEventListener('input', applyFilters); document.getElementById('filter-stage').addEventListener('change', applyFilters); document.getElementById('filter-nature').addEventListener('change', applyFilters); }
+      function populateFilters() {
+        const stages = [...new Set(allData.map(r => r.stage))].sort();
+        const natures = [...new Set(allData.map(r => r.nature))].sort();
+        const sEl = document.getElementById('filter-stage'), nEl = document.getElementById('filter-nature');
+        stages.forEach(s => sEl.add(new Option(`Stage: ${displayStage(s)}`, s)));
+        natures.forEach(n => nEl.add(new Option(`Nature: ${n}`, n)));
+      }
+      function setTheme(t) { document.documentElement.setAttribute('data-theme', t); localStorage.setItem('theme', t); }
+      function toggleTheme() { setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
+
+      async function saveData() {
+        const content = allData.map(r => JSON.stringify(r)).join('\n');
+        try {
+            const handle = await window.showSaveFilePicker({ suggestedName: 'datasets_all.jsonl' });
+            const writable = await handle.createWritable();
+            await writable.write(content); await writable.close();
+            localStorage.removeItem(CONFIG.storageKey);
+            document.getElementById('save-indicator').textContent = "✓ SYNCED";
+        } catch (e) { console.log("Save cancelled"); }
+      }
+    </script>
+  </body>
+</html>

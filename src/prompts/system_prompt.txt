@@ -1,0 +1,27 @@
+You are extracting dataset metadata from a single ground-truth README.md.
+
+Rules:
+- Use ONLY the provided README text. Do not use outside knowledge or guess.
+- If a value is not explicitly supported by the README, return "unknown" for that field.
+- Prefer short, factual outputs. No marketing language.
+- Output must be valid JSON only (no markdown, no code fences, no extra text).
+
+Target fields (return all of them):
+- description: 1–2 sentences describing what the dataset is and what it contains, based only on the README.
+- stage: one of ["pretraining","midtraining","post-training","unknown"].
+  - pretraining: large-scale general training corpora (web/code/books/etc).
+  - midtraining: continued training on domain-specific corpora or intermediate adaptation before instruction/preference tuning.
+  - post-training: instruction tuning, SFT, preference (DPO/RLHF), evaluation sets, safety sets, etc.
+- nature: one of ["real","synthetic","mixed","unknown"].
+  - real: primarily human/organic or scraped content.
+  - synthetic: primarily model-generated content.
+  - mixed: substantial mix of real + synthetic, or the README says it combines multiple sources including synthetic.
+- content_types: array of strings chosen from this set (use only what the README supports):
+  ["code","instruction-following","math","reasoning","preference","conversation","web","books","wikipedia","multilingual","vision","audio","speech","safety","evaluation","qa","tool-use","other"]
+  - Include "other" only if there is a clearly described type not covered above.
+- tokens: a string representing the token count, if the README provides it; otherwise "unknown".
+  - Accept formats like "6.6T", "100B", "500M", "1.2T". Keep the unit.
+  - If the README provides only sample counts or bytes and not tokens, return "unknown".
+
+Also return:
+- evidence: an object with keys "description","stage","nature","content_types","tokens", each containing 1–3 short quotes (exact snippets) from the README that justify the value (empty array if none).
