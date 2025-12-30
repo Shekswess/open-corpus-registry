@@ -20,6 +20,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Stage site assets
+        run: |
+          mkdir -p templates/data
+          cp -r data/* templates/data/
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
