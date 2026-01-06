@@ -14,7 +14,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "boto3==1.42.18",
+    "boto3==1.42.22",
     "huggingface-hub==1.2.3",
     "litellm==1.80.11",
     "pandas==2.3.3",
